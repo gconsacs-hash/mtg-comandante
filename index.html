@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14121b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Colección de Magic con texto en español y armado de mazos Commander desde tus propias cartas.">
+<title>MTG Comandante</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#14121b; --bg2:#1d1a27; --bg3:#272335; --linea:#3a3550; --texto:#ece8f5; --texto2:#a9a3bd;
+  --acento:#d4a44c; --acento2:#f0c46a; --peligro:#e05a5a; --ok:#5cb85c; --aviso:#e8a23a;
+  --W:#f4ebc3; --U:#3f8fd9; --B:#7a6a8f; --R:#d94f4f; --G:#4caa5a; --C:#9a9a9a;
+  --radio:12px; --sombra:0 6px 20px rgba(0,0,0,.35);
+  --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+}
+:root[data-theme="light"]{
+  --bg:#f5f2ea; --bg2:#ffffff; --bg3:#eee9dc; --linea:#d8d1c0; --texto:#221f2a; --texto2:#6b6578;
+  --acento:#a5761c; --acento2:#c9932a; --sombra:0 6px 20px rgba(0,0,0,.12);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--texto);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;overscroll-behavior:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+a{color:var(--acento2)}
+#app{display:flex;flex-direction:column;height:100dvh}
+header.top{padding:calc(var(--sat) + 10px) 16px 10px;background:var(--bg2);border-bottom:1px solid var(--linea);display:flex;align-items:center;gap:10px;flex:none}
+header.top h1{font-size:18px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header.top h1 small{color:var(--texto2);font-weight:400;font-size:13px;margin-left:6px}
+.idioma{display:flex;border:1px solid var(--linea);border-radius:20px;overflow:hidden;font-size:13px}
+.idioma button{padding:5px 10px;color:var(--texto2)}
+.idioma button.on{background:var(--acento);color:#1a1408;font-weight:600}
+main{flex:1;overflow:hidden;position:relative}
+.vista{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
+.vista.on{display:flex}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 0 calc(var(--sab) + 90px)}
+nav.tabs{flex:none;display:flex;background:var(--bg2);border-top:1px solid var(--linea);padding-bottom:var(--sab)}
+nav.tabs button{flex:1;padding:8px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--texto2)}
+nav.tabs button svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav.tabs button.on{color:var(--acento2)}
+/* barra de búsqueda y filtros */
+.barra{padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--linea);display:flex;flex-direction:column;gap:8px;flex:none}
+.buscar{display:flex;gap:8px;align-items:center}
+.buscar input{flex:1;background:var(--bg3);border:1px solid var(--linea);border-radius:10px;padding:9px 12px;outline:none;min-width:0}
+.buscar input:focus{border-color:var(--acento)}
+.btn{background:var(--bg3);border:1px solid var(--linea);border-radius:10px;padding:8px 12px;font-size:14px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn.primario{background:var(--acento);color:#1a1408;border-color:var(--acento);font-weight:600}
+.btn.peligro{color:var(--peligro);border-color:var(--peligro)}
+.btn.chico{padding:5px 9px;font-size:13px}
+.btn:disabled{opacity:.45}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--linea);border-radius:20px;padding:4px 11px;font-size:13px;color:var(--texto2);background:var(--bg3)}
+.chip.on{border-color:var(--acento);color:var(--acento2);background:rgba(212,164,76,.12)}
+.chip.pip{width:32px;height:32px;padding:0;display:grid;place-items:center;font-weight:700;font-size:13px;color:#111}
+.chip.pip.W{background:var(--W)}.chip.pip.U{background:var(--U);color:#fff}.chip.pip.B{background:#2b2536;color:#ddd}.chip.pip.R{background:var(--R);color:#fff}.chip.pip.G{background:var(--G);color:#fff}.chip.pip.C{background:var(--C)}
+.chip.pip{opacity:.4;border-color:transparent}.chip.pip.on{opacity:1;box-shadow:0 0 0 2px var(--acento)}
+select.chip{appearance:none;-webkit-appearance:none;padding-right:22px;background-image:linear-gradient(45deg,transparent 50%,var(--texto2) 50%),linear-gradient(135deg,var(--texto2) 50%,transparent 50%);background-position:calc(100% - 12px) 12px,calc(100% - 8px) 12px;background-size:4px 4px;background-repeat:no-repeat}
+.conteo{font-size:12px;color:var(--texto2);padding:6px 16px 0}
+/* lista de cartas */
+.lista{padding:6px 12px}
+.fila{display:flex;align-items:center;gap:10px;padding:6px 6px;border-radius:10px;min-height:56px}
+.fila:active{background:var(--bg3)}
+.fila .mini{width:38px;height:53px;border-radius:4px;background:var(--bg3);object-fit:cover;flex:none}
+.fila .datos{flex:1;min-width:0}
+.fila .nombre{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}
+.fila .sub{font-size:12px;color:var(--texto2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;gap:6px;align-items:center}
+.fila .qty{font-size:13px;color:var(--texto2);flex:none;min-width:28px;text-align:right}
+.fila .qty b{color:var(--texto)}
+.fila.faltante .nombre{color:var(--peligro)}
+.fila.agotada{opacity:.45}
+.fila .accion{display:flex;align-items:center;gap:4px;flex:none}
+.fila .accion button{width:32px;height:32px;border-radius:50%;background:var(--bg3);border:1px solid var(--linea);font-size:18px;line-height:1;display:grid;place-items:center}
+.fila .accion button.mas{border-color:var(--acento);color:var(--acento2)}
+.fila .accion .n{min-width:18px;text-align:center;font-weight:600}
+.pips{display:inline-flex;gap:2px;vertical-align:middle}
+.pip-s{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;font-size:10px;font-weight:700;color:#111;background:var(--C);box-shadow:inset 0 -1px 0 rgba(0,0,0,.3)}
+.pip-s.W{background:var(--W)}.pip-s.U{background:var(--U);color:#fff}.pip-s.B{background:#3a3245;color:#eee}.pip-s.R{background:var(--R);color:#fff}.pip-s.G{background:var(--G);color:#fff}
+.pip-s.X,.pip-s.N{background:#bbb}
+.pip-s.H{background:linear-gradient(135deg,var(--W) 50%,var(--U) 50%)}
+.grupo-t{font-size:13px;font-weight:700;color:var(--acento2);padding:14px 6px 4px;text-transform:uppercase;letter-spacing:.04em;display:flex;justify-content:space-between}
+.vacio{padding:40px 24px;text-align:center;color:var(--texto2)}
+.vacio b{display:block;color:var(--texto);font-size:17px;margin-bottom:6px}
+.centinela{height:1px}
+/* mazos */
+.tarjeta{background:var(--bg2);border:1px solid var(--linea);border-radius:var(--radio);padding:12px;margin:10px 16px;display:flex;gap:12px;align-items:center}
+.tarjeta:active{background:var(--bg3)}
+.tarjeta .arte{width:56px;height:56px;border-radius:50%;object-fit:cover;object-position:50% 20%;background:var(--bg3);flex:none;border:2px solid var(--linea)}
+.tarjeta .info{flex:1;min-width:0}
+.tarjeta .info b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tarjeta .info span{font-size:13px;color:var(--texto2)}
+.badge{font-size:12px;padding:2px 8px;border-radius:12px;background:var(--bg3);border:1px solid var(--linea);color:var(--texto2);white-space:nowrap}
+.badge.ok{color:var(--ok);border-color:var(--ok)}.badge.mal{color:var(--peligro);border-color:var(--peligro)}.badge.aviso{color:var(--aviso);border-color:var(--aviso)}
+.acciones{display:flex;gap:8px;padding:12px 16px;flex-wrap:wrap}
+/* constructor */
+.cab-mazo{background:var(--bg2);border-bottom:1px solid var(--linea);padding:8px 12px;flex:none}
+.cab-mazo .l1{display:flex;align-items:center;gap:8px}
+.cab-mazo input.titulo{flex:1;background:transparent;border:0;border-bottom:1px dashed var(--linea);font-size:17px;font-weight:700;padding:4px 2px;min-width:0;outline:none}
+.cab-mazo .l2{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:13px;color:var(--texto2);flex-wrap:wrap}
+.cab-mazo .l2 .cmd{color:var(--texto);font-weight:600}
+.subtabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--linea);flex:none}
+.subtabs button{flex:1;padding:10px 4px;font-size:14px;color:var(--texto2);border-bottom:2px solid transparent}
+.subtabs button.on{color:var(--acento2);border-bottom-color:var(--acento)}
+.panel{position:absolute;inset:0;display:none;flex-direction:column}
+.panel.on{display:flex}
+.progreso{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin:6px 0}
+.progreso i{display:block;height:100%;background:var(--acento);width:0;transition:width .2s}
+/* análisis */
+.stats{padding:12px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--bg2);border:1px solid var(--linea);border-radius:10px;padding:10px;text-align:center}
+.stat b{display:block;font-size:22px}
+.stat span{font-size:12px;color:var(--texto2)}
+.seccion{padding:8px 16px}
+.seccion h3{font-size:14px;color:var(--acento2);margin:12px 0 8px;text-transform:uppercase;letter-spacing:.04em}
+.curva{display:flex;align-items:flex-end;gap:6px;height:110px;padding:0 4px}
+.curva div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:11px;color:var(--texto2);gap:3px}
+.curva i{display:block;width:100%;background:var(--acento);border-radius:4px 4px 0 0;min-height:2px}
+.curva b{color:var(--texto);font-size:12px}
+.avisos li{margin:4px 0;font-size:14px}
+.avisos li.mal{color:var(--peligro)}.avisos li.ok{color:var(--ok)}.avisos li.aviso{color:var(--aviso)}
+.roles{display:flex;flex-wrap:wrap;gap:6px}
+/* hoja modal */
+.hoja-fondo{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:50;align-items:flex-end;justify-content:center}
+.hoja-fondo.on{display:flex}
+.hoja{background:var(--bg2);width:100%;max-width:640px;max-height:92dvh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;box-shadow:var(--sombra);animation:subir .22s ease-out}
+@keyframes subir{from{transform:translateY(40px);opacity:.6}to{transform:none;opacity:1}}
+.hoja.alta{height:92dvh}
+.hoja .asa{width:40px;height:4px;border-radius:2px;background:var(--linea);margin:8px auto 0;flex:none}
+.hoja .cuerpo{overflow-y:auto;padding:10px 16px calc(var(--sab) + 16px);flex:1}
+.hoja h2{font-size:18px;margin:4px 0 8px}
+.detalle .imagen{display:block;width:min(100%,300px);aspect-ratio:63/88;border-radius:12px;margin:0 auto 10px;background:var(--bg3);object-fit:cover}
+.detalle .l{font-size:14px;color:var(--texto2);margin:2px 0}
+.detalle .texto{white-space:pre-wrap;background:var(--bg3);border-radius:10px;padding:10px 12px;margin:8px 0;font-size:15px}
+.detalle .cara{border-top:1px solid var(--linea);margin-top:8px;padding-top:8px}
+.detalle .fila-btn{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+textarea.caja{width:100%;min-height:180px;background:var(--bg3);border:1px solid var(--linea);border-radius:10px;padding:10px;resize:vertical;outline:none;font-family:ui-monospace,Consolas,monospace;font-size:13px}
+.aj-item{padding:14px 16px;border-bottom:1px solid var(--linea);display:flex;align-items:center;gap:12px}
+.aj-item .t{flex:1}.aj-item .t b{display:block}.aj-item .t span{font-size:13px;color:var(--texto2)}
+.toast{position:fixed;left:50%;bottom:calc(var(--sab) + 80px);transform:translateX(-50%);background:var(--bg3);border:1px solid var(--linea);color:var(--texto);padding:10px 16px;border-radius:24px;font-size:14px;z-index:60;box-shadow:var(--sombra);opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1}
+.oculto{display:none!important}
+@media (min-width:700px){#app{max-width:760px;margin:0 auto;border-left:1px solid var(--linea);border-right:1px solid var(--linea)}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <h1 id="titulo">MTG Comandante <small id="subtitulo"></small></h1>
+    <div class="idioma" role="group" aria-label="Idioma de las cartas">
+      <button data-lang="es" class="on">ES</button><button data-lang="en">EN</button>
+    </div>
+  </header>
+  <main>
+    <!-- COLECCIÓN -->
+    <section class="vista on" id="v-coleccion">
+      <div class="barra">
+        <div class="buscar">
+          <input id="q" type="search" placeholder="Buscar nombre o texto…" autocomplete="off">
+          <button class="btn chico" id="btn-limpiar" title="Limpiar filtros">✕</button>
+        </div>
+        <div class="chips" id="chips-color">
+          <button class="chip pip W" data-c="W">W</button><button class="chip pip U" data-c="U">U</button>
+          <button class="chip pip B" data-c="B">B</button><button class="chip pip R" data-c="R">R</button>
+          <button class="chip pip G" data-c="G">G</button><button class="chip pip C" data-c="C">C</button>
+          <select class="chip" id="f-tipo"><option value="">Tipo</option></select>
+          <select class="chip" id="f-binder"><option value="">Carpeta</option></select>
+          <select class="chip" id="f-rareza"><option value="">Rareza</option><option value="common">Común</option><option value="uncommon">Infrecuente</option><option value="rare">Rara</option><option value="mythic">Mítica</option></select>
+          <select class="chip" id="f-orden"><option value="nombre">Nombre</option><option value="cmc">Coste</option><option value="qty">Cantidad</option><option value="rareza">Rareza</option><option value="set">Set</option></select>
+          <button class="chip" id="f-cmd">Comandantes</button>
+        </div>
+      </div>
+      <div class="conteo" id="conteo"></div>
+      <div class="scroll"><div class="lista" id="lista-coleccion"></div><div class="centinela" id="cent-coleccion"></div></div>
+    </section>
+
+    <!-- MAZOS -->
+    <section class="vista" id="v-mazos">
+      <div class="acciones">
+        <button class="btn primario" id="btn-nuevo-mazo">＋ Nuevo mazo</button>
+        <button class="btn" id="btn-importar-lista">Importar lista</button>
+      </div>
+      <div class="scroll"><div id="lista-mazos"></div></div>
+    </section>
+
+    <!-- CONSTRUCTOR -->
+    <section class="vista" id="v-mazo">
+      <div class="cab-mazo">
+        <div class="l1">
+          <button class="btn chico" id="btn-volver">‹ Mazos</button>
+          <input class="titulo" id="mazo-nombre" placeholder="Nombre del mazo">
+          <button class="btn chico" id="btn-menu-mazo">⋯</button>
+        </div>
+        <div class="l2" id="mazo-resumen"></div>
+      </div>
+      <div class="subtabs">
+        <button data-p="mazo" class="on">Mazo</button><button data-p="disp">Disponibles</button><button data-p="analisis">Análisis</button>
+      </div>
+      <div style="flex:1;position:relative;overflow:hidden">
+        <div class="panel on" id="p-mazo"><div class="scroll"><div class="lista" id="lista-mazo"></div></div></div>
+        <div class="panel" id="p-disp">
+          <div class="barra">
+            <div class="buscar"><input id="q-disp" type="search" placeholder="Buscar en cartas disponibles…" autocomplete="off"></div>
+            <div class="chips">
+              <button class="chip on" id="d-fuente-col">Mi colección</button>
+              <button class="chip" id="d-fuente-scry">Todas las cartas (Scryfall)</button>
+              <select class="chip" id="d-tipo"><option value="">Tipo</option></select>
+              <select class="chip" id="d-rol"><option value="">Rol</option><option value="rampa">Rampa</option><option value="robo">Robo</option><option value="remocion">Remoción</option><option value="barrida">Barrida</option><option value="contra">Contrahechizo</option><option value="tutor">Tutor</option><option value="sinergia">Sinergia</option></select>
+              <select class="chip" id="d-orden"><option value="puntaje">Recomendadas</option><option value="nombre">Nombre</option><option value="cmc">Coste</option></select>
+              <button class="chip" id="d-libres">Solo libres</button>
+            </div>
+          </div>
+          <div class="conteo" id="conteo-disp"></div>
+          <div class="scroll"><div class="lista" id="lista-disp"></div><div class="centinela" id="cent-disp"></div><div style="text-align:center;padding:8px" id="disp-mas"></div></div>
+        </div>
+        <div class="panel" id="p-analisis"><div class="scroll" id="analisis"></div></div>
+      </div>
+    </section>
+
+    <!-- AJUSTES -->
+    <section class="vista" id="v-ajustes">
+      <div class="scroll" id="ajustes"></div>
+    </section>
+  </main>
+  <nav class="tabs">
+    <button data-v="coleccion" class="on"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="13" height="17" rx="2"/><path d="M16 7h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-8"/></svg>Colección</button>
+    <button data-v="mazos"><svg viewBox="0 0 24 24"><path d="M4 7l8-4 8 4-8 4z"/><path d="M4 12l8 4 8-4"/><path d="M4 17l8 4 8-4"/></svg>Mazos</button>
+    <button data-v="ajustes"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Ajustes</button>
+  </nav>
+</div>
+<div class="hoja-fondo" id="hoja-fondo"><div class="hoja" id="hoja"><div class="asa"></div><div class="cuerpo" id="hoja-cuerpo"></div></div></div>
+<div class="toast" id="toast"></div>
+<script src="data/coleccion.js"></script>
+<script src="data/mazos-iniciales.js"></script>
+<script src="data/basicas.js"></script>
+<script src="scryfall.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
