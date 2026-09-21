@@ -104,22 +104,22 @@ function roles(c) {
 }
 /* Temas detectables en el comandante → regex para las demás cartas */
 const TEMAS = [
-  { n: 'Landfall', cmd: /landfall|whenever a land (enters|you control enters)/i, card: /landfall|land (enters|you control enters)|search your library for .*land|play an additional land|put a land/i },
-  { n: 'Fichas', cmd: /create (a|two|three|x|\d+) .*token/i, card: /create (a|two|three|x|\d+|that many) .*token|tokens? you control|populate/i },
-  { n: 'Contadores +1/+1', cmd: /\+1\/\+1 counter/i, card: /\+1\/\+1 counter|proliferate/i },
-  { n: 'Sacrificio', cmd: /sacrifice (a|another|two) (creature|permanent)|whenever .* dies/i, card: /sacrifice (a|another) creature|whenever .* dies|when .* dies|aristocrat/i },
-  { n: 'Hechizos', cmd: /instant (or|and) sorcery|noncreature spell|prowess|magecraft|whenever you cast/i, card: /instant (or|and) sorcery|noncreature spell|prowess|magecraft|whenever you cast an? (instant|sorcery|noncreature)|copy target instant/i },
-  { n: 'Cementerio', cmd: /from your graveyard|graveyard to the battlefield|mill|dredge/i, card: /from (your|a) graveyard|graveyard to the battlefield|mill|return target creature card from your graveyard/i },
-  { n: 'Artefactos', cmd: /artifact/i, card: /artifact/i },
-  { n: 'Encantamientos', cmd: /enchantment|aura|constellation/i, card: /enchantment|aura|constellation/i },
-  { n: 'Equipo', cmd: /equip|equipment/i, card: /equip|equipment|aura/i },
-  { n: 'Vida', cmd: /gain(s)? life|lifelink|life you gained/i, card: /gain(s)? \d+ life|gain life|lifelink|whenever you gain life/i },
-  { n: 'Volar', cmd: /creatures? with flying|flying creatures/i, card: /\bflying\b/i },
-  { n: 'Vampiros/Robo de vida', cmd: /whenever .* loses life|each opponent loses/i, card: /loses? \d+ life|each opponent loses|extort|drain/i },
-  { n: 'Atacar', cmd: /whenever .* attacks|combat damage/i, card: /whenever .* attacks|combat damage|haste|double strike|extra combat|additional combat/i },
-  { n: 'Grandes', cmd: /power (\d+|5) or greater|total power/i, card: /power (\d+|4|5) or greater|\btrample\b/i },
-  { n: 'Contrahechizos', cmd: /counter target spell|can't be countered/i, card: /counter target/i },
-  { n: 'Tap/Untap', cmd: /untap|becomes tapped|\{T\}/i, card: /untap (target|all|another)|tap target/i },
+  { n: 'Landfall', scry: 'o:landfall', cmd: /landfall|whenever a land (enters|you control enters)/i, card: /landfall|land (enters|you control enters)|search your library for .*land|play an additional land|put a land/i },
+  { n: 'Fichas', scry: 'o:token', cmd: /create (a|two|three|x|\d+) .*token/i, card: /create (a|two|three|x|\d+|that many) .*token|tokens? you control|populate/i },
+  { n: 'Contadores +1/+1', scry: 'o:"+1/+1 counter"', cmd: /\+1\/\+1 counter/i, card: /\+1\/\+1 counter|proliferate/i },
+  { n: 'Sacrificio', scry: '(o:"sacrifice a" or o:"whenever another creature you control dies")', cmd: /sacrifice (a|another|two) (creature|permanent)|whenever .* dies/i, card: /sacrifice (a|another) creature|whenever .* dies|when .* dies|aristocrat/i },
+  { n: 'Hechizos', scry: '(o:"instant or sorcery" or o:magecraft or o:prowess)', cmd: /instant (or|and) sorcery|noncreature spell|prowess|magecraft|whenever you cast/i, card: /instant (or|and) sorcery|noncreature spell|prowess|magecraft|whenever you cast an? (instant|sorcery|noncreature)|copy target instant/i },
+  { n: 'Cementerio', scry: 'o:graveyard', cmd: /from your graveyard|graveyard to the battlefield|mill|dredge/i, card: /from (your|a) graveyard|graveyard to the battlefield|mill|return target creature card from your graveyard/i },
+  { n: 'Artefactos', scry: 't:artifact', cmd: /artifact/i, card: /artifact/i },
+  { n: 'Encantamientos', scry: 't:enchantment', cmd: /enchantment|aura|constellation/i, card: /enchantment|aura|constellation/i },
+  { n: 'Equipo', scry: 't:equipment', cmd: /equip|equipment/i, card: /equip|equipment|aura/i },
+  { n: 'Vida', scry: '(o:"gain life" or o:lifelink)', cmd: /gain(s)? life|lifelink|life you gained/i, card: /gain(s)? \d+ life|gain life|lifelink|whenever you gain life/i },
+  { n: 'Volar', scry: 'o:flying', cmd: /creatures? with flying|flying creatures/i, card: /\bflying\b/i },
+  { n: 'Vampiros/Robo de vida', scry: 'o:"loses life"', cmd: /whenever .* loses life|each opponent loses/i, card: /loses? \d+ life|each opponent loses|extort|drain/i },
+  { n: 'Atacar', scry: 'o:attacks', cmd: /whenever .* attacks|combat damage/i, card: /whenever .* attacks|combat damage|haste|double strike|extra combat|additional combat/i },
+  { n: 'Grandes', scry: '(o:trample or o:"power 4 or greater")', cmd: /power (\d+|5) or greater|total power/i, card: /power (\d+|4|5) or greater|\btrample\b/i },
+  { n: 'Contrahechizos', scry: 'otag:counterspell', cmd: /counter target spell|can't be countered/i, card: /counter target/i },
+  { n: 'Tap/Untap', scry: 'o:untap', cmd: /untap|becomes tapped|\{T\}/i, card: /untap (target|all|another)|tap target/i },
 ];
 function temasDe(cmds) {
   const texto = cmds.map((c) => (c.text || '') + ' ' + (c.kw || []).join(' ')).join('\n');
@@ -357,6 +357,95 @@ function avisosMazo(m) {
   return av;
 }
 
+/* Reparte tierras básicas según los símbolos de maná de las cartas elegidas. Devuelve cuántas agregó. */
+function repartirBasicas(m, elegidas, ci, cantidad, soloLibres, buscar) {
+  if (cantidad <= 0) return 0;
+  const simbolos = {}; for (const k of ci) simbolos[k] = 1;
+  for (const [k, q] of elegidas) { const c = buscar(k); if (!c || esTierra(c)) continue; for (const mch of (c.mana || '').matchAll(/\{([WUBRG])\}/g)) simbolos[mch[1]] = (simbolos[mch[1]] || 0) + q; }
+  const totalSim = Object.values(simbolos).reduce((a, b) => a + b, 0) || 1;
+  const basicasDisp = {}; for (const k of ci) { const e = S.porNombre.get(BASICAS[k]); basicasDisp[k] = e ? e.qty - (soloLibres ? usadasEnOtros(BASICAS[k], m.id).n : 0) - (elegidas.get(BASICAS[k]) || 0) : 0; }
+  const colores = [...ci];
+  if (!colores.length) { const e = S.porNombre.get('Wastes'); colores.push('C'); simbolos.C = 1; basicasDisp.C = e ? e.qty : 0; }
+  const nombreBasica = (k) => k === 'C' ? 'Wastes' : BASICAS[k];
+  const plan = {}; for (const k of colores) plan[k] = Math.min(basicasDisp[k], Math.round(cantidad * (simbolos[k] || 0) / totalSim));
+  let asignadas = Object.values(plan).reduce((a, b) => a + b, 0);
+  let vueltas = 0;
+  while (asignadas > cantidad) { for (const k of colores) { if (asignadas <= cantidad) break; if (plan[k] > 0) { plan[k]--; asignadas--; } } }
+  while (asignadas < cantidad && vueltas < 200) { let hubo = false; for (const k of colores) { if (asignadas >= cantidad) break; if (plan[k] < basicasDisp[k]) { plan[k]++; asignadas++; hubo = true; } } if (!hubo) break; vueltas++; }
+  for (const k of colores) if (plan[k] > 0) elegidas.set(nombreBasica(k), (elegidas.get(nombreBasica(k)) || 0) + plan[k]);
+  return asignadas;
+}
+
+/* Sugerir con todas las cartas que existen (Scryfall, por popularidad en Commander) */
+async function sugerirScryfall(m, opts = {}, onProgreso = () => {}) {
+  const ci = identidad(m);
+  const cmds = m.comandantes.map(cartaPorNombre).filter(Boolean);
+  const { temas, tribus } = temasDe(cmds);
+  const base = `id<=${ci.length ? ci.join('') : 'c'} f:commander -is:digital -is:funny`;
+  const precio = opts.precio ? ` usd<=${opts.precio}` : '';
+  const consulta = async (q) => {
+    const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(q)}&order=edhrec&include_multilingual=true&unique=cards`;
+    try {
+      const r = await fetch(url, { headers: { Accept: 'application/json' } });
+      if (!r.ok) return [];
+      const j = await r.json();
+      return (j.data || []).map((c) => { const k = MTG.recortar(c); if (c.lang === 'es') k.es = MTG.recortarEs(c) || undefined; return k; });
+    } catch { return []; }
+  };
+  // Las impresiones en español no tienen precio en Scryfall: con tope de precio se consulta en inglés
+  // (para filtrar) y en español (para nombres/texto), y se cruzan por nombre.
+  const pedir = async (q, n) => {
+    if (S.lang !== 'es') return (await consulta(base + precio + ' ' + q)).slice(0, n);
+    const es = await consulta(base + ' ' + q + ' lang:es');
+    if (!precio) return es.slice(0, n);
+    await new Promise((r) => setTimeout(r, 120));
+    const en = await consulta(base + precio + ' ' + q);
+    const permitidas = new Set(en.map((c) => c.name));
+    const conEs = new Map(es.map((c) => [c.name, c]));
+    return en.filter((c) => permitidas.has(c.name)).map((c) => conEs.get(c.name) || c).slice(0, n);
+  };
+  const meta = 99 - (m.comandantes.length - 1);
+  const objetivoTierras = 37;
+  const elegidas = new Map(); const cartas = new Map(); // name → carta
+  const excluir = new Set(m.comandantes);
+  let n = 0;
+  const tomar = (lista, max) => { let t = 0; for (const c of lista) { if (t >= max || n >= meta - objetivoTierras) break; if (excluir.has(c.name) || elegidas.has(c.name) || esTierra(c)) continue; elegidas.set(c.name, 1); cartas.set(c.name, c); n++; t++; } };
+  const pasos = [];
+  const sinergiaQ = [];
+  for (const t of tribus) sinergiaQ.push(`t:${t} or o:${t}`);
+  for (const t of temas) if (t.scry) sinergiaQ.push(t.scry);
+  if (sinergiaQ.length) pasos.push({ q: `(${sinergiaQ.join(' or ')}) -t:land`, max: 30, nombre: 'sinergia' });
+  pasos.push({ q: 'otag:ramp -t:land', max: 10, nombre: 'rampa' });
+  pasos.push({ q: 'otag:draw -t:land', max: 10, nombre: 'robo' });
+  pasos.push({ q: 'otag:removal -t:land', max: 8, nombre: 'remoción' });
+  pasos.push({ q: 'otag:board-wipe', max: 3, nombre: 'barridas' });
+  if (ci.includes('U')) pasos.push({ q: 'otag:counterspell', max: 4, nombre: 'contrahechizos' });
+  pasos.push({ q: 'otag:protection -t:land', max: 3, nombre: 'protección' });
+  pasos.push({ q: '-t:land', max: 60, nombre: 'populares' });
+  let i = 0;
+  for (const p of pasos) {
+    onProgreso({ paso: p.nombre, hecho: i++, total: pasos.length + 1 });
+    if (n >= meta - objetivoTierras) break;
+    const lista = await pedir(p.q, 100);
+    tomar(lista, p.max);
+    await new Promise((r) => setTimeout(r, 120));
+  }
+  // tierras no básicas populares
+  onProgreso({ paso: 'tierras', hecho: pasos.length, total: pasos.length + 1 });
+  const tierras = await pedir('t:land -t:basic', 60);
+  const maxNoBasicas = ci.length >= 2 ? Math.min(18, 8 + ci.length * 4) : 8;
+  let t = 0;
+  for (const c of tierras) { if (t >= maxNoBasicas || n >= meta) break; if (elegidas.has(c.name)) continue; elegidas.set(c.name, 1); cartas.set(c.name, c); n++; t++; }
+  // registrar las que no tienes como extras (una sola escritura)
+  let nuevas = 0;
+  for (const [name, c] of cartas) { if (!S.porNombre.has(name) && !S.extras.has(name)) { S.extras.set(name, { ...c, qty: 0, foil: 0, binders: {}, extra: true }); nuevas++; } }
+  if (nuevas) { await idb.set('extras', [...S.extras.values()]); indexar(); }
+  repartirBasicas(m, elegidas, ci, meta - n, false, (k) => cartas.get(k) || cartaPorNombre(k));
+  m.cartas = Object.fromEntries(elegidas);
+  guardarMazos();
+  return { tribus, temas, nuevas };
+}
+
 /* Sugerir: completa el mazo automáticamente con la colección */
 function sugerir(m, opts = {}) {
   const { lista, ctx } = disponiblesPara(m);
@@ -399,19 +488,8 @@ function sugerir(m, opts = {}) {
   const noBasicas = cand.filter((x) => esTierra(x.c) && !esBasica(x.c) && x.s >= 2.5).sort((a, b) => b.s - a.s);
   const maxNoBasicas = Math.max(0, Math.round(faltanTierras * (ci.length >= 2 ? 0.45 : 0.25)));
   for (const x of noBasicas.slice(0, maxNoBasicas)) { if (faltanTierras <= 0) break; tomar(x); faltanTierras--; }
-  const simbolos = {}; for (const k of ci) simbolos[k] = 1;
-  for (const [k, q] of elegidas) { const c = cartaPorNombre(k); if (!c || esTierra(c)) continue; for (const mch of (c.mana || '').matchAll(/\{([WUBRG])\}/g)) simbolos[mch[1]] = (simbolos[mch[1]] || 0) + q; }
-  const totalSim = Object.values(simbolos).reduce((a, b) => a + b, 0) || 1;
-  const basicasDisp = {}; for (const k of ci) { const e = S.porNombre.get(BASICAS[k]); basicasDisp[k] = e ? e.qty - (soloLibres ? usadasEnOtros(BASICAS[k], m.id).n : 0) - (elegidas.get(BASICAS[k]) || 0) : 0; }
-  const colores = [...ci];
-  if (!colores.length) { const e = S.porNombre.get('Wastes'); if (e) basicasDisp.C = e.qty; colores.push('C'); simbolos.C = 1; basicasDisp.C = basicasDisp.C || 0; }
-  const nombreBasica = (k) => k === 'C' ? 'Wastes' : BASICAS[k];
-  let restantes = faltanTierras;
-  const plan = {}; for (const k of colores) plan[k] = Math.min(basicasDisp[k], Math.round(restantes * (simbolos[k] || 0) / totalSim));
-  let asignadas = Object.values(plan).reduce((a, b) => a + b, 0);
-  let vueltas = 0;
-  while (asignadas < restantes && vueltas < 200) { let hubo = false; for (const k of colores) { if (asignadas >= restantes) break; if (plan[k] < basicasDisp[k]) { plan[k]++; asignadas++; hubo = true; } } if (!hubo) break; vueltas++; }
-  for (const k of colores) if (plan[k] > 0) tomar({ name: nombreBasica(k) }, plan[k]);
+  const asignadas = repartirBasicas(m, elegidas, ci, faltanTierras, soloLibres, (c) => cartaPorNombre(c));
+  n += asignadas;
   faltanTierras -= asignadas;
   // si faltan básicas, rellena con tierras no básicas restantes o hechizos
   if (faltanTierras > 0) for (const x of noBasicas.slice(maxNoBasicas)) { if (faltanTierras <= 0) break; if (elegidas.has(x.name)) continue; tomar(x); faltanTierras--; }
@@ -588,6 +666,34 @@ function crearMazo(comandantes) {
   const m = { id: uid(), nombre: c ? nom(c).split(',')[0] : 'Nuevo mazo', comandantes: comandantes.slice(0, 2), cartas: {}, creado: new Date().toISOString() };
   S.mazos.unshift(m); guardarMazos();
   abrirMazo(m.id);
+  setTimeout(() => opcionesArmado(m), 150);
+}
+/* Hoja: cómo armar el mazo recién creado */
+function opcionesArmado(m) {
+  const c = cartaPorNombre(m.comandantes[0] || '');
+  hoja(`<h2>¿Cómo armar el mazo${c ? ' de ' + esc(nom(c)) : ''}?</h2>
+    <div class="fila-btn" style="flex-direction:column;align-items:stretch">
+      <button class="btn primario" id="arm-col">🎒 Solo con las cartas que ya tengo</button>
+      <p class="l" style="color:var(--texto2);margin:0 0 6px">99 cartas de tu colección que caben en la identidad de color, priorizando sinergia y roles.</p>
+      <button class="btn primario" id="arm-scry">🌐 Con todas las cartas que existen</button>
+      <p class="l" style="color:var(--texto2);margin:0 0 6px">Las más populares en Commander para este comandante (Scryfall). Marca cuáles ya tienes y arma la lista de compras. Necesita internet.</p>
+      <label class="l" style="display:flex;align-items:center;gap:8px;margin:0 0 10px">Precio máx. por carta:
+        <select class="chip" id="arm-precio"><option value="">sin límite</option><option value="10">US$ 10</option><option value="5">US$ 5</option><option value="2">US$ 2</option><option value="1">US$ 1</option></select></label>
+      <button class="btn" id="arm-mano">✋ Lo armo yo a mano</button>
+    </div>`);
+  $('#arm-col').onclick = () => { sugerir(m); cerrarHoja(); pintarMazo(); toast('Mazo armado con tu colección: ' + totalMazo(m) + ' cartas'); };
+  $('#arm-scry').onclick = () => { if (Object.keys(m.cartas).length && !confirm('Esto reemplaza las cartas actuales del mazo. ¿Continuar?')) return; armarConScryfall(m, { precio: $('#arm-precio').value }); };
+  $('#arm-mano').onclick = cerrarHoja;
+}
+async function armarConScryfall(m, opts = {}) {
+  if (!navigator.onLine) { toast('Sin conexión: esta opción necesita internet'); return; }
+  hoja(`<h2>Armando con Scryfall…</h2><div class="l" id="arm-txt">Consultando…</div><div class="progreso"><i id="arm-bar"></i></div>`);
+  try {
+    const r = await sugerirScryfall(m, opts, (p) => { $('#arm-txt').textContent = `Buscando ${p.paso}…`; $('#arm-bar').style.width = Math.round(p.hecho / p.total * 100) + '%'; });
+    cerrarHoja(); pintarMazo();
+    const compras = listaCompras(m).reduce((a, x) => a + x.q, 0);
+    toast(`Mazo armado: ${totalMazo(m)} cartas · ${compras} por comprar`);
+  } catch (e) { cerrarHoja(); toast('No se pudo armar: ' + e.message); }
 }
 function elegirComandante(cb, filtro) {
   let lista = [...S.porNombre.values()].map((e) => e.card).filter(esComandante);
@@ -719,6 +825,7 @@ function menuMazo() {
     <div class="fila-btn" style="flex-direction:column;align-items:stretch">
       <button class="btn primario" id="mn-sugerir">✨ Sugerir mazo (completar hasta 100)</button>
       <button class="btn" id="mn-sugerir-libres">✨ Sugerir solo con cartas libres (no usadas en otros mazos)</button>
+      <button class="btn primario" id="mn-sugerir-scry">🌐 Armar con todas las cartas que existen (Scryfall)</button>
       <button class="btn" id="mn-cambiar-cmd">Cambiar comandante</button>
       <button class="btn" id="mn-exportar">Exportar lista (ManaBox / Moxfield)</button>
       <button class="btn" id="mn-compras">Lista de compras (cartas que no tienes)</button>
@@ -729,6 +836,7 @@ function menuMazo() {
   const sug = (libres) => { if (!m.comandantes.length) { toast('Elige un comandante primero'); return; } sugerir(m, { libres }); cerrarHoja(); pintarMazo(); toast('Mazo completado: ' + totalMazo(m) + ' cartas'); };
   $('#mn-sugerir').onclick = () => sug(false);
   $('#mn-sugerir-libres').onclick = () => sug(true);
+  $('#mn-sugerir-scry').onclick = () => { if (!m.comandantes.length) { toast('Elige un comandante primero'); return; } opcionesArmado(m); };
   $('#mn-cambiar-cmd').onclick = () => elegirComandante((n) => { m.comandantes = [n]; delete m.cartas[n]; guardarMazos(); pintarMazo(); });
   $('#mn-exportar').onclick = () => exportarHoja(m);
   $('#mn-compras').onclick = () => comprasHoja(m);
