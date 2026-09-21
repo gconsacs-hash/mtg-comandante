@@ -50,7 +50,15 @@ Esto reescribe `data/coleccion.js`, que es la colección que viene "de fábrica"
 | `data/basicas.js`, `scripts/basicas.js` | Tierras básicas (EN/ES) y el script que las descarga |
 | `sw.js`, `manifest.json`, `icon*` | PWA (sin conexión, instalable) |
 
-## Cómo sugiere un mazo
+## Armado automático
+
+Al elegir un comandante (o desde el menú ⋯ del mazo) la app pregunta cómo armarlo:
+
+- **Solo con las cartas que ya tengo** — algoritmo local descrito abajo.
+- **Con todas las cartas que existen** — consulta Scryfall por popularidad en Commander (EDHREC) para la identidad del comandante: ~30 de sinergia (tribu/temas), 10 rampa, 10 robo, 8 remoción, 3 barridas, contrahechizos si hay azul, 3 de protección, el resto las más populares, ~8-18 tierras no básicas y básicas repartidas por símbolos. Opción de **precio máximo por carta** (usa el precio USD de Scryfall). Las cartas que no tienes quedan marcadas y en la Lista de compras.
+- **Lo armo yo a mano.**
+
+## Cómo sugiere un mazo (solo colección)
 
 1. Detecta la **tribu** (subtipos del comandante, p. ej. *Elf*, *Vampire*) y los **temas** de su texto (landfall, fichas, contadores, sacrificio, hechizos, cementerio, etc.).
 2. Puntúa cada carta de la colección que cabe en la identidad de color: rareza, coste, rol (rampa, robo, remoción, barrida, contrahechizo, tutor) y sinergia con la tribu/temas.
