@@ -719,7 +719,9 @@ function elegirComandante(cb, filtro) {
       resultados = (j.data || []).map((c) => { const k = MTG.recortar(c); if (c.lang === 'es') k.es = MTG.recortarEs(c) || undefined; return k; });
       if (filtro) resultados = resultados.filter(filtro);
       $('#cmd-sub').textContent = `${j.total_cards || 0} comandantes en todo Magic${S.lang === 'es' ? ' con edición en español' : ''} · por popularidad`;
-      $('#cmd-lista').innerHTML = resultados.map((c) => { const e = S.porNombre.get(c.name); return filaHTML(c, { extra: ((c.ci || []).join('') || 'C') + (e && !e.extra ? ' · Lo tienes' : ''), faltante: !(e && !e.extra), qty: e ? e.qty : 0 }); }).join('') || '<div class="vacio">Ninguno coincide.</div>';
+      const propias = [...S.porNombre.values()].filter((e) => !e.extra && !e.ilimitada && e.card.legal !== false);
+      const encajan = (ci) => propias.filter((e) => identidadOk(e.card, ci)).length;
+      $('#cmd-lista').innerHTML = resultados.map((c) => { const e = S.porNombre.get(c.name); return filaHTML(c, { extra: ((c.ci || []).join('') || 'C') + (e && !e.extra ? ' · Lo tienes' : '') + ` · ${encajan(c.ci || [])} tuyas encajan`, faltante: !(e && !e.extra), qty: e ? e.qty : 0 }); }).join('') || '<div class="vacio">Ninguno coincide.</div>';
     } catch { if (mio === seq && $('#cmd-sub')) { $('#cmd-sub').textContent = navigator.onLine ? 'Error al consultar Scryfall' : 'Sin conexión'; $('#cmd-lista').innerHTML = ''; } }
   };
   const pintar = (q) => fuente === 'col' ? pintarCol(q) : pintarScry(q);
