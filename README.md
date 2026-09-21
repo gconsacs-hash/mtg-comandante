@@ -52,6 +52,8 @@ Esto reescribe `data/coleccion.js`, que es la colección que viene "de fábrica"
 
 ## Armado automático
 
+Al crear un mazo, el selector de comandante tiene dos fuentes: **Mi colección** (tus legendarias) y **Todo Magic (Scryfall)** (cualquier comandante legal, por popularidad, con búsqueda por nombre/tipo/texto). Un comandante que no tienes se guarda como «extra» y entra en la lista de compras.
+
 Al elegir un comandante (o desde el menú ⋯ del mazo) la app pregunta cómo armarlo:
 
 - **Solo con las cartas que ya tengo** — algoritmo local descrito abajo.
