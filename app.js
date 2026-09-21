@@ -329,7 +329,7 @@ function avisosMazo(m) {
   const ci = identidad(m);
   const total = totalMazo(m);
   if (m.comandantes.length === 0) av.push(['mal', 'El mazo no tiene comandante.']);
-  for (const n of m.comandantes) { const e = S.porNombre.get(n); if (!e || e.extra) av.push(['aviso', `El comandante ${n} no está en tu colección.`]); }
+  for (const n of m.comandantes) { const e = S.porNombre.get(n); if (!e || e.extra) av.push(['aviso', `El comandante ${e ? nom(e.card) : n} no está en tu colección.`]); }
   if (m.comandantes.length === 2) {
     const c = m.comandantes.map(cartaPorNombre);
     if (!c.every((x) => x && tienePartner(x))) av.push(['aviso', 'Dos comandantes: ambos deben tener Compañero (Partner), Background u otra habilidad similar.']);
@@ -696,20 +696,48 @@ async function armarConScryfall(m, opts = {}) {
   } catch (e) { cerrarHoja(); toast('No se pudo armar: ' + e.message); }
 }
 function elegirComandante(cb, filtro) {
-  let lista = [...S.porNombre.values()].map((e) => e.card).filter(esComandante);
+  let lista = [...S.porNombre.values()].filter((e) => !e.extra).map((e) => e.card).filter(esComandante);
   if (filtro) lista = lista.filter(filtro);
   lista.sort((a, b) => nom(a).localeCompare(nom(b), 'es'));
-  const pintar = (q = '') => {
+  let fuente = 'col', resultados = [], timer = null, seq = 0;
+  const pintarCol = (q = '') => {
     const k = norm(q);
     const l = k ? lista.filter((c) => norm(nom(c) + ' ' + c.name + ' ' + c.type + ' ' + tip(c)).includes(k)) : lista;
     $('#cmd-lista').innerHTML = l.slice(0, 150).map((c) => filaHTML(c, { extra: (c.ci || []).join('') || 'C' })).join('') || '<div class="vacio">Ninguno coincide.</div>';
+    $('#cmd-sub').textContent = `${lista.length} criaturas legendarias legales en tu colección`;
   };
-  hoja(`<h2>Elige un comandante</h2><p class="l" style="color:var(--texto2)">${lista.length} criaturas legendarias legales en tu colección</p>
+  const pintarScry = async (q = '') => {
+    const mio = ++seq;
+    $('#cmd-sub').textContent = 'Buscando en Scryfall…';
+    const partes = [q.trim(), 'is:commander', 'f:commander', '-is:digital', '-is:funny'];
+    if (S.lang === 'es') partes.push('lang:es');
+    const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(partes.filter(Boolean).join(' '))}&order=edhrec&include_multilingual=true&unique=cards`;
+    try {
+      const r = await fetch(url, { headers: { Accept: 'application/json' } });
+      const j = r.ok ? await r.json() : { data: [], total_cards: 0 };
+      if (mio !== seq || !$('#cmd-sub')) return;
+      resultados = (j.data || []).map((c) => { const k = MTG.recortar(c); if (c.lang === 'es') k.es = MTG.recortarEs(c) || undefined; return k; });
+      if (filtro) resultados = resultados.filter(filtro);
+      $('#cmd-sub').textContent = `${j.total_cards || 0} comandantes en todo Magic${S.lang === 'es' ? ' con edición en español' : ''} · por popularidad`;
+      $('#cmd-lista').innerHTML = resultados.map((c) => { const e = S.porNombre.get(c.name); return filaHTML(c, { extra: ((c.ci || []).join('') || 'C') + (e && !e.extra ? ' · Lo tienes' : ''), faltante: !(e && !e.extra), qty: e ? e.qty : 0 }); }).join('') || '<div class="vacio">Ninguno coincide.</div>';
+    } catch { if (mio === seq && $('#cmd-sub')) { $('#cmd-sub').textContent = navigator.onLine ? 'Error al consultar Scryfall' : 'Sin conexión'; $('#cmd-lista').innerHTML = ''; } }
+  };
+  const pintar = (q) => fuente === 'col' ? pintarCol(q) : pintarScry(q);
+  hoja(`<h2>Elige un comandante</h2>
+    <div class="chips" style="margin-bottom:8px"><button class="chip on" id="cmd-f-col">Mi colección</button><button class="chip" id="cmd-f-scry">Todo Magic (Scryfall)</button></div>
+    <p class="l" id="cmd-sub" style="color:var(--texto2);margin:0 0 8px"></p>
     <div class="buscar" style="margin-bottom:8px"><input id="cmd-q" type="search" placeholder="Buscar…" autocomplete="off"></div><div class="lista" id="cmd-lista"></div>`);
   $('#hoja').classList.add('alta');
-  pintar();
-  $('#cmd-q').oninput = (e) => pintar(e.target.value);
-  $('#cmd-lista').onclick = (e) => { const f = e.target.closest('.fila'); if (!f) return; cerrarHoja(); cb(f.dataset.name); };
+  pintar('');
+  const cambiar = (f) => { fuente = f; $('#cmd-f-col').classList.toggle('on', f === 'col'); $('#cmd-f-scry').classList.toggle('on', f === 'scry'); $('#cmd-q').placeholder = f === 'scry' ? 'Nombre, tipo, texto… (ej. dragon, elf, vampire)' : 'Buscar…'; pintar($('#cmd-q').value); };
+  $('#cmd-f-col').onclick = () => cambiar('col');
+  $('#cmd-f-scry').onclick = () => cambiar('scry');
+  $('#cmd-q').oninput = (e) => { clearTimeout(timer); timer = setTimeout(() => pintar(e.target.value), fuente === 'scry' ? 500 : 0); };
+  $('#cmd-lista').onclick = async (e) => {
+    const f = e.target.closest('.fila'); if (!f) return;
+    if (fuente === 'scry') { const c = resultados.find((x) => x.name === f.dataset.name); if (c) await registrarExtra(c); }
+    cerrarHoja(); cb(f.dataset.name);
+  };
 }
 
 /* ---------------- UI: constructor ---------------- */
